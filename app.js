@@ -5,7 +5,6 @@
 
 const GEMINI_API_KEY = "AIzaSyDQE7i_2h_IruAOISKjPDq8EC5bNmasFd4";
 
-// ── STATE ─────────────────────────
 const state = {
   photo: null,
   photoMime: 'image/jpeg',
@@ -14,9 +13,9 @@ const state = {
   selectedColor: 'Warna asli',
   currentFilter: 'semua',
   previewRun: false,
+  stepInterval: null,
 };
 
-// ── KATALOG MODEL RAMBUT ──────────
 const CATALOG = [
   { id: 'buzz',       name: 'Buzz Cut',      cat: 'pendek', icon: '✂️',  desc: 'Sangat pendek merata, mudah dirawat' },
   { id: 'crew',       name: 'Crew Cut',       cat: 'pendek', icon: '💈',  desc: 'Pendek di samping, lebih panjang di atas' },
@@ -37,8 +36,7 @@ const CATALOG = [
 ];
 
 // ══════════════════════════════════
-//   HELPER — GEMINI API CALL
-//   Otomatis retry jika kena 429
+//   HELPER — GEMINI API
 // ══════════════════════════════════
 async function callGemini(parts, maxTokens = 500, temp = 0.3) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -59,15 +57,12 @@ async function callGemini(parts, maxTokens = 500, temp = 0.3) {
     }
 
     if (response.status === 429) {
-      const wait = attempt * 8000; // 8 detik, 16 detik, 24 detik
-      setLoadingMsg(
-        `Server sibuk, mencoba ulang dalam ${wait/1000} detik... (${attempt}/3)`
-      );
+      const wait = attempt * 8000;
+      setLoadingMsg(`Server sibuk, mencoba ulang dalam ${wait / 1000} detik... (${attempt}/3)`);
       await sleep(wait);
       continue;
     }
 
-    // Error lain
     const errData = await response.json().catch(() => ({}));
     throw new Error(`API error ${response.status}: ${JSON.stringify(errData)}`);
   }
@@ -75,13 +70,10 @@ async function callGemini(parts, maxTokens = 500, temp = 0.3) {
   throw new Error('Server terlalu sibuk. Coba lagi dalam 1-2 menit.');
 }
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function setLoadingMsg(msg) {
-  const els = document.querySelectorAll('.loading-sub');
-  els.forEach(el => { el.textContent = msg; });
+  document.querySelectorAll('.loading-sub').forEach(el => { el.textContent = msg; });
 }
 
 // ══════════════════════════════════
@@ -90,55 +82,43 @@ function setLoadingMsg(msg) {
 function goTo(n) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + n).classList.add('active');
-
   for (let i = 1; i <= 4; i++) {
     const dot = document.getElementById('dot-' + i);
     dot.classList.remove('active', 'done');
-    if (i < n)   dot.classList.add('done');
+    if (i < n)  dot.classList.add('done');
     if (i === n) dot.classList.add('active');
   }
-
   window.scrollTo({ top: 0, behavior: 'smooth' });
-
   if (n === 2) startAnalysis();
   if (n === 3) startPreview();
   if (n === 4) updateSummary();
 }
 
 // ══════════════════════════════════
-//   SCREEN 1 — UPLOAD FOTO
+//   SCREEN 1 — UPLOAD
 // ══════════════════════════════════
 const uploadArea = document.getElementById('upload-area');
 const fileInput  = document.getElementById('file-input');
 const previewImg = document.getElementById('preview-img');
 
 uploadArea.addEventListener('click', () => fileInput.click());
-
-uploadArea.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  uploadArea.style.borderColor = 'var(--gold)';
-});
-uploadArea.addEventListener('dragleave', () => {
-  uploadArea.style.borderColor = '';
-});
+uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.style.borderColor = 'var(--gold)'; });
+uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = ''; });
 uploadArea.addEventListener('drop', (e) => {
   e.preventDefault();
   const file = e.dataTransfer.files[0];
   if (file && file.type.startsWith('image/')) handleFile(file);
 });
-
 fileInput.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (file) handleFile(file);
+  if (e.target.files[0]) handleFile(e.target.files[0]);
 });
 
 function handleFile(file) {
   state.photoMime = file.type || 'image/jpeg';
   const reader = new FileReader();
   reader.onload = (e) => {
-    const dataUrl = e.target.result;
-    state.photo = dataUrl.split(',')[1];
-    previewImg.src = dataUrl;
+    state.photo = e.target.result.split(',')[1];
+    previewImg.src = e.target.result;
     previewImg.hidden = false;
     document.getElementById('upload-inner').style.display = 'none';
     uploadArea.classList.add('filled');
@@ -148,7 +128,7 @@ function handleFile(file) {
 }
 
 // ══════════════════════════════════
-//   SCREEN 2 — ANALISIS AI
+//   SCREEN 2 — ANALISIS
 // ══════════════════════════════════
 let analysisRun = false;
 
@@ -169,8 +149,7 @@ async function startAnalysis() {
   } catch (err) {
     console.error('Analisis gagal:', err);
     state.analysis = null;
-    document.getElementById('analysis-summary').textContent =
-      'Pilih model rambut yang Anda inginkan';
+    document.getElementById('analysis-summary').textContent = 'Pilih model rambut yang Anda inginkan';
   } finally {
     document.getElementById('loading-analysis').style.display = 'none';
     renderModelGrid('semua');
@@ -192,42 +171,34 @@ Analisis foto wajah ini dengan teliti, lalu balas HANYA dengan JSON berikut tanp
 }
 Pilih 5 recommended_ids dari daftar ini saja:
 buzz, crew, caesar, textured, ivy, fade, taper, undercut, mohawk, frenchcrop, pompadour, quiff, slickback, curly, wolfcut, bun
-Sesuaikan dengan bentuk wajah dan panjang rambut saat ini. Jangan rekomendasikan model yang butuh rambut jauh lebih panjang dari kondisi foto.`;
+Sesuaikan dengan bentuk wajah dan panjang rambut saat ini.`;
 
-  const parts = [
+  const raw   = await callGemini([
     { inline_data: { mime_type: state.photoMime, data: state.photo } },
     { text: prompt }
-  ];
+  ], 500, 0.3);
 
-  const raw   = await callGemini(parts, 500, 0.3);
-  const clean = raw.replace(/```json|```/g, '').trim();
-  return JSON.parse(clean);
+  return JSON.parse(raw.replace(/```json|```/g, '').trim());
 }
 
 function renderAnalysis(data) {
   if (!data) return;
   document.getElementById('analysis-box').style.display  = 'block';
-  document.getElementById('a-face').textContent   = data.face_shape?.toUpperCase() || '—';
-  document.getElementById('a-type').textContent   = data.hair_type   || '—';
-  document.getElementById('a-length').textContent = data.hair_length  || '—';
-  if (data.summary) {
-    document.getElementById('analysis-summary').textContent = data.summary;
-  }
+  document.getElementById('a-face').textContent          = data.face_shape?.toUpperCase() || '—';
+  document.getElementById('a-type').textContent          = data.hair_type   || '—';
+  document.getElementById('a-length').textContent        = data.hair_length  || '—';
+  if (data.summary) document.getElementById('analysis-summary').textContent = data.summary;
 }
 
-// ── MODEL GRID ────────────────────
 function renderModelGrid(filter) {
   const grid = document.getElementById('model-grid');
   grid.innerHTML = '';
-
   let list = [...CATALOG];
 
-  // Rekomendasi AI muncul duluan
   if (state.analysis?.recommended_ids?.length) {
     const recIds = state.analysis.recommended_ids;
     list.sort((a, b) => {
-      const ia = recIds.indexOf(a.id);
-      const ib = recIds.indexOf(b.id);
+      const ia = recIds.indexOf(a.id), ib = recIds.indexOf(b.id);
       if (ia === -1 && ib === -1) return 0;
       if (ia === -1) return 1;
       if (ib === -1) return -1;
@@ -235,9 +206,7 @@ function renderModelGrid(filter) {
     });
   }
 
-  if (filter !== 'semua') {
-    list = list.filter(m => m.cat === filter);
-  }
+  if (filter !== 'semua') list = list.filter(m => m.cat === filter);
 
   list.forEach(model => {
     const isRec = state.analysis?.recommended_ids?.includes(model.id);
@@ -262,7 +231,6 @@ function selectModel(model, cardEl) {
 }
 
 function filterModels(cat, btn) {
-  state.currentFilter = cat;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderModelGrid(cat);
@@ -277,43 +245,77 @@ async function startPreview() {
 
   document.getElementById('loading-preview').style.display = 'block';
   document.getElementById('preview-result').style.display  = 'none';
+  document.getElementById('preview-error').style.display   = 'none';
   document.getElementById('nav-3').style.display           = 'none';
+  document.getElementById('preview-status').textContent    = 'AI sedang bekerja...';
+
+  animateSteps();
 
   try {
     const desc = await generateModelDescription();
     renderPreview(desc);
+    document.getElementById('preview-status').textContent = 'Selesai! Pilih warna jika ingin cat rambut.';
   } catch (err) {
     console.error('Preview gagal:', err);
-    renderPreview(null);
-  } finally {
-    document.getElementById('loading-preview').style.display = 'none';
-    document.getElementById('preview-result').style.display  = 'block';
-    document.getElementById('nav-3').style.display           = 'flex';
+    showPreviewError(err.message);
   }
+}
+
+function animateSteps() {
+  const steps = ['pstep-1', 'pstep-2', 'pstep-3'];
+  steps.forEach(id => {
+    document.getElementById(id).classList.remove('active', 'done');
+  });
+  document.getElementById('pstep-1').classList.add('active');
+
+  let current = 0;
+  state.stepInterval = setInterval(() => {
+    if (current < steps.length - 1) {
+      document.getElementById(steps[current]).classList.remove('active');
+      document.getElementById(steps[current]).classList.add('done');
+      current++;
+      document.getElementById(steps[current]).classList.add('active');
+    } else {
+      clearInterval(state.stepInterval);
+    }
+  }, 3000);
+}
+
+function showPreviewError(msg) {
+  clearInterval(state.stepInterval);
+  document.getElementById('loading-preview').style.display = 'none';
+  document.getElementById('preview-error').style.display   = 'block';
+  document.getElementById('nav-3').style.display           = 'flex';
+  document.getElementById('preview-status').textContent    = 'Terjadi kendala.';
+  document.getElementById('error-desc').textContent        = msg || 'Server sedang padat. Coba lagi dalam 1-2 menit.';
+}
+
+function retryPreview() {
+  state.previewRun = false;
+  startPreview();
 }
 
 async function generateModelDescription() {
   const model = state.selectedModel;
   const face  = state.analysis?.face_shape || 'oval';
-
-  const parts = [{
+  return await callGemini([{
     text: `Kamu adalah barber profesional Indonesia. Tulis panduan singkat untuk model rambut "${model.name}" bagi pelanggan dengan wajah ${face}. Maksimal 2 kalimat natural dan friendly dalam Bahasa Indonesia. Jelaskan mengapa cocok dan berapa minggu sekali perlu dipotong. Tanpa bullet points.`
-  }];
-
-  try {
-    return await callGemini(parts, 200, 0.7);
-  } catch {
-    return `${model.name} sangat cocok untuk bentuk wajah ${face} karena memberikan proporsi yang seimbang. Disarankan untuk dipotong setiap 3-4 minggu agar tampilan selalu rapi dan stylish.`;
-  }
+  }], 200, 0.7);
 }
 
 function renderPreview(desc) {
-  const model     = state.selectedModel;
-  const userPhoto = 'data:' + state.photoMime + ';base64,' + state.photo;
-  document.getElementById('result-img').src            = userPhoto;
+  clearInterval(state.stepInterval);
+  const model = state.selectedModel;
+  document.getElementById('result-img').src                = 'data:' + state.photoMime + ';base64,' + state.photo;
+  document.getElementById('res-icon').textContent          = model.icon;
+  document.getElementById('res-name').textContent          = model.name;
+  document.getElementById('overlay-model').textContent     = model.name;
   document.getElementById('result-model-name').textContent = model.name;
-  document.getElementById('result-desc').textContent   = desc ||
-    `${model.name} cocok untuk tampilan ${model.desc.toLowerCase()}. Disarankan potong setiap 3-4 minggu.`;
+  document.getElementById('result-desc').textContent       = desc;
+  document.getElementById('loading-preview').style.display = 'none';
+  document.getElementById('preview-error').style.display   = 'none';
+  document.getElementById('preview-result').style.display  = 'block';
+  document.getElementById('nav-3').style.display           = 'flex';
 }
 
 // ── WARNA ─────────────────────────
@@ -328,10 +330,8 @@ function pickColor(colorName, el) {
 //   SCREEN 4 — KIRIM WHATSAPP
 // ══════════════════════════════════
 function updateSummary() {
-  document.getElementById('sum-model').textContent =
-    state.selectedModel?.name || '—';
-  document.getElementById('sum-color').textContent =
-    state.selectedColor || 'Warna asli';
+  document.getElementById('sum-model').textContent = state.selectedModel?.name || '—';
+  document.getElementById('sum-color').textContent = state.selectedColor || 'Warna asli';
 }
 
 function sendWhatsApp() {
@@ -340,25 +340,19 @@ function sendWhatsApp() {
   if (!name) { alert('Mohon isi nama Anda terlebih dahulu.'); return; }
   if (!wa)   { alert('Mohon isi nomor WhatsApp Anda.'); return; }
 
-  const face   = state.analysis?.face_shape  || '-';
-  const type   = state.analysis?.hair_type   || '-';
-  const length = state.analysis?.hair_length || '-';
-  const model  = state.selectedModel?.name   || '-';
-  const color  = state.selectedColor;
-
   const msg =
 `✂️ *StyleIn.AI — Hasil Analisis Rambut*
 
 Halo *${name}*! Berikut hasil sesi StyleIn.AI Anda:
 
 📊 *Analisis Wajah:*
-- Bentuk wajah: ${face}
-- Jenis rambut: ${type}
-- Panjang saat ini: ${length}
+- Bentuk wajah: ${state.analysis?.face_shape || '-'}
+- Jenis rambut: ${state.analysis?.hair_type  || '-'}
+- Panjang saat ini: ${state.analysis?.hair_length || '-'}
 
 💈 *Pilihan Gaya:*
-- Model rambut: *${model}*
-- Warna cat: ${color}
+- Model rambut: *${state.selectedModel?.name || '-'}*
+- Warna cat: ${state.selectedColor}
 
 Tunjukkan pesan ini ke barber Anda untuk hasil terbaik! 💪
 
@@ -374,15 +368,12 @@ _Powered by StyleIn.AI — Smart Barbershop Platform_`;
 //   RESET
 // ══════════════════════════════════
 function resetApp() {
-  state.photo         = null;
-  state.analysis      = null;
-  state.selectedModel = null;
-  state.selectedColor = 'Warna asli';
-  state.previewRun    = false;
-  analysisRun         = false;
+  clearInterval(state.stepInterval);
+  state.photo = null; state.analysis = null;
+  state.selectedModel = null; state.selectedColor = 'Warna asli';
+  state.previewRun = false; analysisRun = false;
 
-  previewImg.src    = '';
-  previewImg.hidden = true;
+  previewImg.src = ''; previewImg.hidden = true;
   document.getElementById('upload-inner').style.display = '';
   uploadArea.classList.remove('filled');
   document.getElementById('btn-to-2').disabled = true;
@@ -391,6 +382,5 @@ function resetApp() {
   document.getElementById('success-box').style.display = 'none';
   document.getElementById('inp-name').value = '';
   document.getElementById('inp-wa').value   = '';
-
   goTo(1);
 }
