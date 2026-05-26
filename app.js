@@ -77,26 +77,19 @@ async function callGemini(parts, maxTokens = 500, temp = 0.3) {
 
 // Step 1: Minta upload URL dari LightX
 async function getLightXUploadUrl(sizeInBytes, mimeType) {
-  const response = await fetch('https://api.lightxeditor.com/external/api/v2/uploadImageUrl', {
+  const response = await fetch('/api/upload-url', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': LIGHTX_API_KEY
-    },
-    body: JSON.stringify({
-      uploadType: 'imageUrl',
-      size: sizeInBytes,
-      contentType: mimeType
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ size: sizeInBytes, contentType: mimeType })
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(`LightX upload URL error ${response.status}: ${JSON.stringify(err)}`);
+    throw new Error(`Upload URL error: ${JSON.stringify(err)}`);
   }
   const data = await response.json();
   return {
-    uploadUrl: data.body.uploadImage,   // PUT ke sini
-    imageUrl:  data.body.imageUrl       // pakai ini untuk generate
+    uploadUrl: data.body.uploadImage,
+    imageUrl:  data.body.imageUrl
   };
 }
 
@@ -115,17 +108,14 @@ async function uploadImageToS3(putUrl, blob, mimeType) {
 
 // Step 2: Generate hairstyle
 async function generateHairstyle(imageUrl, textPrompt) {
-  const response = await fetch('https://api.lightxeditor.com/external/api/v2/hairstyle', {
+  const response = await fetch('/api/hairstyle', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': LIGHTX_API_KEY
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ imageUrl, textPrompt })
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(`LightX hairstyle error ${response.status}: ${JSON.stringify(err)}`);
+    throw new Error(`Hairstyle error: ${JSON.stringify(err)}`);
   }
   const data = await response.json();
   return data.body.orderId;
@@ -134,30 +124,22 @@ async function generateHairstyle(imageUrl, textPrompt) {
 // Step 2.1: Poll status sampai active
 async function pollOrderStatus(orderId) {
   for (let i = 1; i <= 5; i++) {
-    await sleep(3000); // tunggu 3 detik tiap poll
+    await sleep(3000);
     setLoadingMsg(`Memproses gambar... (${i}/5)`);
 
-    const response = await fetch('https://api.lightxeditor.com/external/api/v2/order-status', {
+    const response = await fetch('/api/order-status', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': LIGHTX_API_KEY
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderId })
     });
 
     if (!response.ok) continue;
 
-    const data = await response.json();
+    const data  = await response.json();
     const status = data.body?.status;
 
-    if (status === 'active') {
-      return data.body.output; // URL gambar hasil
-    }
-    if (status === 'failed') {
-      throw new Error('Generasi gambar gagal di server LightX.');
-    }
-    // status 'init' = masih proses, lanjut poll
+    if (status === 'active') return data.body.output;
+    if (status === 'failed') throw new Error('Generasi gambar gagal di server LightX.');
   }
   throw new Error('Timeout: gambar tidak selesai dalam 15 detik.');
 }
