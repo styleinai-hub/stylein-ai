@@ -13,7 +13,7 @@ export default async function handler(req, res) {
       '"hair_type": "lurus atau bergelombang atau keriting",',
       '"hair_length": "sangat pendek atau pendek atau sedang atau panjang",',
       '"recommended_ids": ["id1","id2","id3","id4","id5"],',
-      '"summary": "kalimat singkat rekomendasi"',
+      '"summary": "kalimat singkat rekomendasi untuk wajah ini"',
       '}',
       'Pilih 5 recommended_ids dari: buzz, crew, caesar, textured, ivy, fade, taper, undercut, mohawk, frenchcrop, pompadour, quiff, slickback, curly, wolfcut, bun',
       'Sesuaikan dengan bentuk wajah dan panjang rambut saat ini.'
