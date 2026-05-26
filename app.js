@@ -1,17 +1,19 @@
 // ══════════════════════════════════
 //   STYLEIN.AI — App Logic
+//   Engine: Gemini 1.5 Flash (Free)
 // ══════════════════════════════════
 
 const GEMINI_API_KEY = "AIzaSyDQE7i_2h_IruAOISKjPDq8EC5bNmasFd4";
 
 // ── STATE ─────────────────────────
 const state = {
-  photo: null,          // base64 foto user
+  photo: null,
   photoMime: 'image/jpeg',
-  analysis: null,       // hasil analisis AI
-  selectedModel: null,  // model rambut dipilih
+  analysis: null,
+  selectedModel: null,
   selectedColor: 'Warna asli',
   currentFilter: 'semua',
+  previewRun: false,
 };
 
 // ── KATALOG MODEL RAMBUT ──────────
@@ -35,25 +37,69 @@ const CATALOG = [
 ];
 
 // ══════════════════════════════════
+//   HELPER — GEMINI API CALL
+//   Otomatis retry jika kena 429
+// ══════════════════════════════════
+async function callGemini(parts, maxTokens = 500, temp = 0.3) {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts }],
+        generationConfig: { temperature: temp, maxOutputTokens: maxTokens }
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.candidates[0].content.parts[0].text;
+    }
+
+    if (response.status === 429) {
+      const wait = attempt * 8000; // 8 detik, 16 detik, 24 detik
+      setLoadingMsg(
+        `Server sibuk, mencoba ulang dalam ${wait/1000} detik... (${attempt}/3)`
+      );
+      await sleep(wait);
+      continue;
+    }
+
+    // Error lain
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(`API error ${response.status}: ${JSON.stringify(errData)}`);
+  }
+
+  throw new Error('Server terlalu sibuk. Coba lagi dalam 1-2 menit.');
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function setLoadingMsg(msg) {
+  const els = document.querySelectorAll('.loading-sub');
+  els.forEach(el => { el.textContent = msg; });
+}
+
+// ══════════════════════════════════
 //   NAVIGASI
 // ══════════════════════════════════
 function goTo(n) {
-  // Sembunyikan semua screen
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + n).classList.add('active');
 
-  // Update dots
   for (let i = 1; i <= 4; i++) {
     const dot = document.getElementById('dot-' + i);
     dot.classList.remove('active', 'done');
-    if (i < n)  dot.classList.add('done');
+    if (i < n)   dot.classList.add('done');
     if (i === n) dot.classList.add('active');
   }
 
-  // Scroll ke atas
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // Aksi khusus per screen
   if (n === 2) startAnalysis();
   if (n === 3) startPreview();
   if (n === 4) updateSummary();
@@ -66,10 +112,8 @@ const uploadArea = document.getElementById('upload-area');
 const fileInput  = document.getElementById('file-input');
 const previewImg = document.getElementById('preview-img');
 
-// Klik area upload → buka file picker
 uploadArea.addEventListener('click', () => fileInput.click());
 
-// Drag & drop
 uploadArea.addEventListener('dragover', (e) => {
   e.preventDefault();
   uploadArea.style.borderColor = 'var(--gold)';
@@ -83,7 +127,6 @@ uploadArea.addEventListener('drop', (e) => {
   if (file && file.type.startsWith('image/')) handleFile(file);
 });
 
-// File dipilih
 fileInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (file) handleFile(file);
@@ -94,16 +137,11 @@ function handleFile(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
     const dataUrl = e.target.result;
-    // Simpan base64 tanpa prefix
     state.photo = dataUrl.split(',')[1];
-
-    // Tampilkan preview
     previewImg.src = dataUrl;
     previewImg.hidden = false;
     document.getElementById('upload-inner').style.display = 'none';
     uploadArea.classList.add('filled');
-
-    // Aktifkan tombol lanjut
     document.getElementById('btn-to-2').disabled = false;
   };
   reader.readAsDataURL(file);
@@ -115,24 +153,21 @@ function handleFile(file) {
 let analysisRun = false;
 
 async function startAnalysis() {
-  // Hanya run sekali (tidak ulang kalau balik ke screen ini)
   if (analysisRun) return;
   analysisRun = true;
 
-  // Tampilkan loading
   document.getElementById('loading-analysis').style.display = 'block';
-  document.getElementById('analysis-box').style.display    = 'none';
-  document.getElementById('model-filters').style.display   = 'none';
-  document.getElementById('model-grid').style.display      = 'none';
-  document.getElementById('nav-2').style.display           = 'none';
+  document.getElementById('analysis-box').style.display     = 'none';
+  document.getElementById('model-filters').style.display    = 'none';
+  document.getElementById('model-grid').style.display       = 'none';
+  document.getElementById('nav-2').style.display            = 'none';
 
   try {
-    const result = await analyzeWithGemini();
+    const result = await analyzePhoto();
     state.analysis = result;
     renderAnalysis(result);
   } catch (err) {
     console.error('Analisis gagal:', err);
-    // Fallback: tampilkan semua model tanpa analisis
     state.analysis = null;
     document.getElementById('analysis-summary').textContent =
       'Pilih model rambut yang Anda inginkan';
@@ -145,53 +180,36 @@ async function startAnalysis() {
   }
 }
 
-async function analyzeWithGemini() {
-  const prompt = `Kamu adalah AI analis rambut profesional untuk barbershop.
-Analisis foto wajah ini dengan teliti, lalu balas HANYA dengan JSON berikut tanpa markdown, tanpa penjelasan:
+async function analyzePhoto() {
+  const prompt = `Kamu adalah AI analis rambut profesional untuk barbershop Indonesia.
+Analisis foto wajah ini dengan teliti, lalu balas HANYA dengan JSON berikut tanpa markdown, tanpa penjelasan tambahan apapun:
 {
   "face_shape": "oval|bulat|persegi|lonjong|hati",
   "hair_type": "lurus|bergelombang|keriting",
   "hair_length": "sangat pendek|pendek|sedang|panjang",
   "recommended_ids": ["id1","id2","id3","id4","id5"],
-  "summary": "Kalimat singkat 1 baris tentang rekomendasi untuk wajah ini"
+  "summary": "Kalimat singkat 1 baris rekomendasi untuk wajah ini"
 }
 Pilih 5 recommended_ids dari daftar ini saja:
 buzz, crew, caesar, textured, ivy, fade, taper, undercut, mohawk, frenchcrop, pompadour, quiff, slickback, curly, wolfcut, bun
 Sesuaikan dengan bentuk wajah dan panjang rambut saat ini. Jangan rekomendasikan model yang butuh rambut jauh lebih panjang dari kondisi foto.`;
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { inline_data: { mime_type: state.photoMime, data: state.photo } },
-            { text: prompt }
-          ]
-        }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 500 }
-      })
-    }
-  );
+  const parts = [
+    { inline_data: { mime_type: state.photoMime, data: state.photo } },
+    { text: prompt }
+  ];
 
-  if (!response.ok) throw new Error('API error: ' + response.status);
-
-  const data = await response.json();
-  const raw  = data.candidates[0].content.parts[0].text;
+  const raw   = await callGemini(parts, 500, 0.3);
   const clean = raw.replace(/```json|```/g, '').trim();
   return JSON.parse(clean);
 }
 
 function renderAnalysis(data) {
   if (!data) return;
-
-  document.getElementById('analysis-box').style.display = 'block';
+  document.getElementById('analysis-box').style.display  = 'block';
   document.getElementById('a-face').textContent   = data.face_shape?.toUpperCase() || '—';
   document.getElementById('a-type').textContent   = data.hair_type   || '—';
   document.getElementById('a-length').textContent = data.hair_length  || '—';
-
   if (data.summary) {
     document.getElementById('analysis-summary').textContent = data.summary;
   }
@@ -202,8 +220,9 @@ function renderModelGrid(filter) {
   const grid = document.getElementById('model-grid');
   grid.innerHTML = '';
 
-  // Tentukan urutan: rekomendasi AI duluan
   let list = [...CATALOG];
+
+  // Rekomendasi AI muncul duluan
   if (state.analysis?.recommended_ids?.length) {
     const recIds = state.analysis.recommended_ids;
     list.sort((a, b) => {
@@ -216,7 +235,6 @@ function renderModelGrid(filter) {
     });
   }
 
-  // Filter kategori
   if (filter !== 'semua') {
     list = list.filter(m => m.cat === filter);
   }
@@ -240,8 +258,6 @@ function selectModel(model, cardEl) {
   document.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
   cardEl.classList.add('selected');
   document.getElementById('btn-to-3').disabled = false;
-
-  // Reset analisis agar screen 3 generate ulang
   state.previewRun = false;
 }
 
@@ -280,39 +296,24 @@ async function generateModelDescription() {
   const model = state.selectedModel;
   const face  = state.analysis?.face_shape || 'oval';
 
-  const prompt = `Kamu adalah barber profesional Indonesia.
-Tulis panduan singkat untuk model rambut "${model.name}" bagi pelanggan dengan wajah ${face}.
-Maksimal 2 kalimat. Gunakan bahasa Indonesia yang natural dan friendly.
-Jelaskan: mengapa cocok untuk wajah ini + berapa minggu sekali perlu dipotong.
-Jangan pakai bullet points atau formatting, cukup paragraf singkat.`;
+  const parts = [{
+    text: `Kamu adalah barber profesional Indonesia. Tulis panduan singkat untuk model rambut "${model.name}" bagi pelanggan dengan wajah ${face}. Maksimal 2 kalimat natural dan friendly dalam Bahasa Indonesia. Jelaskan mengapa cocok dan berapa minggu sekali perlu dipotong. Tanpa bullet points.`
+  }];
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 200 }
-      })
-    }
-  );
-
-  const data = await response.json();
-  return data.candidates[0].content.parts[0].text.trim();
+  try {
+    return await callGemini(parts, 200, 0.7);
+  } catch {
+    return `${model.name} sangat cocok untuk bentuk wajah ${face} karena memberikan proporsi yang seimbang. Disarankan untuk dipotong setiap 3-4 minggu agar tampilan selalu rapi dan stylish.`;
+  }
 }
 
 function renderPreview(desc) {
-  const model = state.selectedModel;
-
-  // Tampilkan foto user sebagai preview (dengan overlay model)
+  const model     = state.selectedModel;
   const userPhoto = 'data:' + state.photoMime + ';base64,' + state.photo;
-  document.getElementById('result-img').src = userPhoto;
-
+  document.getElementById('result-img').src            = userPhoto;
   document.getElementById('result-model-name').textContent = model.name;
-  document.getElementById('result-desc').textContent = desc ||
-    `${model.name} adalah pilihan yang tepat untuk tampilan ${model.desc.toLowerCase()}. ` +
-    `Disarankan untuk dipotong setiap 3-4 minggu agar tetap rapi.`;
+  document.getElementById('result-desc').textContent   = desc ||
+    `${model.name} cocok untuk tampilan ${model.desc.toLowerCase()}. Disarankan potong setiap 3-4 minggu.`;
 }
 
 // ── WARNA ─────────────────────────
@@ -336,14 +337,13 @@ function updateSummary() {
 function sendWhatsApp() {
   const name = document.getElementById('inp-name').value.trim();
   const wa   = document.getElementById('inp-wa').value.trim();
-
   if (!name) { alert('Mohon isi nama Anda terlebih dahulu.'); return; }
   if (!wa)   { alert('Mohon isi nomor WhatsApp Anda.'); return; }
 
-  const face   = state.analysis?.face_shape   || '-';
-  const type   = state.analysis?.hair_type    || '-';
-  const length = state.analysis?.hair_length  || '-';
-  const model  = state.selectedModel?.name    || '-';
+  const face   = state.analysis?.face_shape  || '-';
+  const type   = state.analysis?.hair_type   || '-';
+  const length = state.analysis?.hair_length || '-';
+  const model  = state.selectedModel?.name   || '-';
   const color  = state.selectedColor;
 
   const msg =
@@ -365,12 +365,7 @@ Tunjukkan pesan ini ke barber Anda untuk hasil terbaik! 💪
 _Powered by StyleIn.AI — Smart Barbershop Platform_`;
 
   const waClean = wa.replace(/[\s\-\(\)]/g, '').replace(/^0/, '62');
-  const url = `https://wa.me/${waClean}?text=${encodeURIComponent(msg)}`;
-
-  // Buka WhatsApp
-  window.open(url, '_blank');
-
-  // Tampilkan success
+  window.open(`https://wa.me/${waClean}?text=${encodeURIComponent(msg)}`, '_blank');
   document.getElementById('send-area').style.display   = 'none';
   document.getElementById('success-box').style.display = 'block';
 }
@@ -379,7 +374,6 @@ _Powered by StyleIn.AI — Smart Barbershop Platform_`;
 //   RESET
 // ══════════════════════════════════
 function resetApp() {
-  // Reset state
   state.photo         = null;
   state.analysis      = null;
   state.selectedModel = null;
@@ -387,15 +381,12 @@ function resetApp() {
   state.previewRun    = false;
   analysisRun         = false;
 
-  // Reset UI screen 1
   previewImg.src    = '';
   previewImg.hidden = true;
   document.getElementById('upload-inner').style.display = '';
   uploadArea.classList.remove('filled');
   document.getElementById('btn-to-2').disabled = true;
   fileInput.value = '';
-
-  // Reset screen 4
   document.getElementById('send-area').style.display   = '';
   document.getElementById('success-box').style.display = 'none';
   document.getElementById('inp-name').value = '';
