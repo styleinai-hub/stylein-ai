@@ -378,10 +378,14 @@ function renderModelGrid(filter) {
     const card  = document.createElement('div');
     card.className = 'model-card' + (state.selectedModel?.id === model.id ? ' selected' : '');
     card.innerHTML = `
-      <div class="model-icon">${model.icon}</div>
-      <div class="model-name">${model.name}</div>
-      <div class="model-cat">${isRec ? '⭐ Rekomendasi' : model.cat}</div>
-    `;
+  <div class="model-img-wrap">
+    <img src="${model.img}" alt="${model.name}" loading="lazy"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div class="model-img-fallback" style="display:none">${model.icon}</div>
+  </div>
+  <div class="model-name">${model.name}</div>
+  <div class="model-cat">${isRec ? '⭐ Rekomendasi' : model.cat}</div>
+`;
     card.onclick = () => selectModel(model, card);
     grid.appendChild(card);
   });
