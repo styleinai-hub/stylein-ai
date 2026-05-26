@@ -224,11 +224,10 @@ main {
   font-size: 13px;
   color: var(--muted);
   line-height: 1.7;
-  display: -webkit-box;
-  -webkit-line-clamp: unset;
-  -webkit-box-orient: vertical;
   overflow: visible;
   white-space: normal;
+  max-height: none;
+  height: auto;
 }
 
 /* ── INFO NOTE ──────────────────── */
