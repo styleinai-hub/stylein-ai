@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StyleIn.ai — Smart Hair Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">STYLE<span>IN</span>.AI</div>
+    <div class="step-dots">
+      <div class="dot active" id="dot-1"></div>
+      <div class="dot" id="dot-2"></div>
+      <div class="dot" id="dot-3"></div>
+      <div class="dot" id="dot-4"></div>
+    </div>
+    <div class="header-tag">BARBERSHOP AI</div>
+  </header>
+
+  <!-- MAIN APP -->
+  <main>
+
+    <!-- ══ SCREEN 1: UPLOAD FOTO ══ -->
+    <div class="screen active" id="screen-1">
+      <div class="screen-header">
+        <div class="step-label">Langkah 1 dari 4</div>
+        <h1>Upload <span class="gold">Foto Selfie</span><br>Anda</h1>
+        <p class="step-sub">Gunakan foto tampak depan dengan pencahayaan baik untuk hasil terbaik</p>
+      </div>
+
+      <div class="upload-area" id="upload-area">
+        <input type="file" id="file-input" accept="image/*" hidden>
+        <div class="upload-inner" id="upload-inner">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">Tap untuk upload foto</div>
+          <div class="upload-hint">JPG, PNG • Maks 10MB</div>
+        </div>
+        <img id="preview-img" src="" alt="Preview" hidden>
+      </div>
+
+      <div class="ai-note">
+        <span class="note-icon">✨</span>
+        <span>AI akan menganalisis bentuk wajah dan merekomendasikan model rambut terbaik untuk Anda</span>
+      </div>
+
+      <button class="btn-primary" id="btn-to-2" disabled onclick="goTo(2)">
+        Analisis Foto →
+      </button>
+    </div>
+
+    <!-- ══ SCREEN 2: PILIH MODEL ══ -->
+    <div class="screen" id="screen-2">
+      <div class="screen-header">
+        <div class="step-label">Langkah 2 dari 4</div>
+        <h1>Pilih <span class="gold">Model</span><br>Rambut</h1>
+        <p class="step-sub" id="analysis-summary">AI sedang menganalisis foto Anda...</p>
+      </div>
+
+      <!-- Analysis Box -->
+      <div class="analysis-box" id="analysis-box" style="display:none">
+        <div class="analysis-row">
+          <span class="a-key">Bentuk Wajah</span>
+          <span class="a-badge" id="a-face">—</span>
+        </div>
+        <div class="analysis-row">
+          <span class="a-key">Jenis Rambut</span>
+          <span class="a-val" id="a-type">—</span>
+        </div>
+        <div class="analysis-row">
+          <span class="a-key">Panjang Saat Ini</span>
+          <span class="a-val" id="a-length">—</span>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-box" id="loading-analysis">
+        <div class="spinner"></div>
+        <div class="loading-text">AI menganalisis foto Anda...</div>
+        <div class="loading-sub">Ini membutuhkan beberapa detik</div>
+      </div>
+
+      <!-- Filter -->
+      <div class="filters" id="model-filters" style="display:none">
+        <button class="filter-btn active" onclick="filterModels('semua', this)">Semua</button>
+        <button class="filter-btn" onclick="filterModels('pendek', this)">Pendek</button>
+        <button class="filter-btn" onclick="filterModels('sedang', this)">Sedang</button>
+        <button class="filter-btn" onclick="filterModels('panjang', this)">Panjang</button>
+        <button class="filter-btn" onclick="filterModels('fade', this)">Fade</button>
+      </div>
+
+      <!-- Model Grid -->
+      <div class="model-grid" id="model-grid" style="display:none"></div>
+
+      <div class="nav-row" id="nav-2" style="display:none">
+        <button class="btn-secondary" onclick="goTo(1)">← Kembali</button>
+        <button class="btn-primary" id="btn-to-3" disabled onclick="goTo(3)">Preview Model →</button>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN 3: PREVIEW ══ -->
+    <div class="screen" id="screen-3">
+      <div class="screen-header">
+        <div class="step-label">Langkah 3 dari 4</div>
+        <h1>Preview <span class="gold">Hasil</span><br>Anda</h1>
+        <p class="step-sub">AI sedang menerapkan model rambut ke foto Anda</p>
+      </div>
+
+      <!-- Loading Preview -->
+      <div class="loading-box" id="loading-preview">
+        <div class="spinner"></div>
+        <div class="loading-text">Menyulap foto Anda...</div>
+        <div class="loading-sub">AI sedang bekerja, mohon tunggu</div>
+      </div>
+
+      <!-- Preview Result -->
+      <div id="preview-result" style="display:none">
+        <div class="result-card">
+          <div class="result-img-wrap">
+            <img id="result-img" src="" alt="Hasil">
+            <div class="result-badge">AI PREVIEW</div>
+          </div>
+          <div class="result-info">
+            <div class="result-model-name" id="result-model-name"></div>
+            <div class="result-desc" id="result-desc"></div>
+          </div>
+        </div>
+
+        <!-- Warna Rambut -->
+        <div class="color-section">
+          <div class="color-title">Ingin cat rambut? <span class="color-optional">(Opsional)</span></div>
+          <div class="color-palette">
+            <div class="swatch active" style="background:#111" onclick="pickColor('Hitam Pekat',this)" title="Hitam Pekat"></div>
+            <div class="swatch" style="background:#3d2b1f" onclick="pickColor('Coklat Gelap',this)" title="Coklat Gelap"></div>
+            <div class="swatch" style="background:#7b4f2e" onclick="pickColor('Coklat',this)" title="Coklat"></div>
+            <div class="swatch" style="background:#c19a6b" onclick="pickColor('Caramel',this)" title="Caramel"></div>
+            <div class="swatch" style="background:#d4a017" onclick="pickColor('Golden Blonde',this)" title="Golden Blonde"></div>
+            <div class="swatch" style="background:#8B0000" onclick="pickColor('Merah',this)" title="Merah"></div>
+            <div class="swatch" style="background:#2c3e8c" onclick="pickColor('Biru Hitam',this)" title="Biru Hitam"></div>
+            <div class="swatch" style="background:#808080" onclick="pickColor('Abu-abu',this)" title="Abu-abu/Silver"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-row" id="nav-3" style="display:none">
+        <button class="btn-secondary" onclick="goTo(2)">← Kembali</button>
+        <button class="btn-primary" onclick="goTo(4)">Kirim ke WhatsApp →</button>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN 4: KIRIM ══ -->
+    <div class="screen" id="screen-4">
+      <div class="screen-header">
+        <div class="step-label">Langkah 4 dari 4</div>
+        <h1>Kirim ke <span class="gold">WhatsApp</span><br>Anda</h1>
+        <p class="step-sub">Simpan hasil dan tunjukkan ke barber Anda</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Nama Anda</label>
+        <input class="form-input" id="inp-name" type="text" placeholder="Masukkan nama Anda">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nomor WhatsApp</label>
+        <input class="form-input" id="inp-wa" type="tel" placeholder="08xxxxxxxxxx">
+      </div>
+
+      <div class="summary-box">
+        <div class="summary-row">
+          <span>Model Dipilih</span>
+          <strong id="sum-model">—</strong>
+        </div>
+        <div class="summary-row">
+          <span>Warna Rambut</span>
+          <strong id="sum-color">Warna asli</strong>
+        </div>
+      </div>
+
+      <div id="send-area">
+        <button class="btn-primary" onclick="sendWhatsApp()">
+          Kirim via WhatsApp ✓
+        </button>
+      </div>
+
+      <div id="success-box" style="display:none">
+        <div class="success-icon">✅</div>
+        <div class="success-title">Berhasil Dikirim!</div>
+        <div class="success-sub">Tunjukkan hasil ke barber Anda untuk pengalaman terbaik</div>
+        <button class="btn-secondary" onclick="resetApp()" style="margin-top:24px;width:100%">
+          Mulai Sesi Baru
+        </button>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn-secondary" onclick="goTo(3)">← Kembali</button>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
