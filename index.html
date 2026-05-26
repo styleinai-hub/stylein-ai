@@ -10,7 +10,6 @@
 </head>
 <body>
 
-  <!-- HEADER -->
   <header>
     <div class="logo">STYLE<span>IN</span>.AI</div>
     <div class="step-dots">
@@ -22,7 +21,6 @@
     <div class="header-tag">BARBERSHOP AI</div>
   </header>
 
-  <!-- MAIN APP -->
   <main>
 
     <!-- ══ SCREEN 1: UPLOAD FOTO ══ -->
@@ -61,7 +59,6 @@
         <p class="step-sub" id="analysis-summary">AI sedang menganalisis foto Anda...</p>
       </div>
 
-      <!-- Analysis Box -->
       <div class="analysis-box" id="analysis-box" style="display:none">
         <div class="analysis-row">
           <span class="a-key">Bentuk Wajah</span>
@@ -77,14 +74,12 @@
         </div>
       </div>
 
-      <!-- Loading State -->
       <div class="loading-box" id="loading-analysis">
         <div class="spinner"></div>
         <div class="loading-text">AI menganalisis foto Anda...</div>
         <div class="loading-sub">Ini membutuhkan beberapa detik</div>
       </div>
 
-      <!-- Filter -->
       <div class="filters" id="model-filters" style="display:none">
         <button class="filter-btn active" onclick="filterModels('semua', this)">Semua</button>
         <button class="filter-btn" onclick="filterModels('pendek', this)">Pendek</button>
@@ -93,7 +88,6 @@
         <button class="filter-btn" onclick="filterModels('fade', this)">Fade</button>
       </div>
 
-      <!-- Model Grid -->
       <div class="model-grid" id="model-grid" style="display:none"></div>
 
       <div class="nav-row" id="nav-2" style="display:none">
@@ -107,48 +101,89 @@
       <div class="screen-header">
         <div class="step-label">Langkah 3 dari 4</div>
         <h1>Preview <span class="gold">Hasil</span><br>Anda</h1>
-        <p class="step-sub">AI sedang menerapkan model rambut ke foto Anda</p>
+        <p class="step-sub" id="preview-status">Mempersiapkan analisis...</p>
       </div>
 
-      <!-- Loading Preview -->
-      <div class="loading-box" id="loading-preview">
-        <div class="spinner"></div>
-        <div class="loading-text">Menyulap foto Anda...</div>
-        <div class="loading-sub">AI sedang bekerja, mohon tunggu</div>
+      <!-- State 1: Loading -->
+      <div id="loading-preview">
+        <div class="preview-loading-card">
+          <div class="spinner large"></div>
+          <div class="preview-steps">
+            <div class="pstep active" id="pstep-1">
+              <span class="pstep-dot"></span>
+              <span>Membaca pilihan model rambut...</span>
+            </div>
+            <div class="pstep" id="pstep-2">
+              <span class="pstep-dot"></span>
+              <span>AI menganalisis kesesuaian gaya...</span>
+            </div>
+            <div class="pstep" id="pstep-3">
+              <span class="pstep-dot"></span>
+              <span>Menyiapkan panduan barber...</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Preview Result -->
+      <!-- State 2: Error -->
+      <div id="preview-error" style="display:none">
+        <div class="error-card">
+          <div class="error-icon">⚠️</div>
+          <div class="error-title">AI Sedang Sibuk</div>
+          <div class="error-desc" id="error-desc">Server sedang padat. Silakan coba lagi.</div>
+          <button class="btn-primary" onclick="retryPreview()" style="margin-top:20px">
+            Coba Lagi
+          </button>
+        </div>
+      </div>
+
+      <!-- State 3: Hasil -->
       <div id="preview-result" style="display:none">
+
+        <div class="selected-tag">
+          <span class="selected-icon" id="res-icon"></span>
+          <span class="selected-name" id="res-name"></span>
+          <span class="selected-check">✓ Dipilih</span>
+        </div>
+
         <div class="result-card">
           <div class="result-img-wrap">
-            <img id="result-img" src="" alt="Hasil">
-            <div class="result-badge">AI PREVIEW</div>
+            <img id="result-img" src="" alt="Foto Anda">
+            <div class="result-badge">FOTO ANDA</div>
+            <div class="result-overlay">
+              <div class="overlay-model" id="overlay-model"></div>
+            </div>
           </div>
           <div class="result-info">
             <div class="result-model-name" id="result-model-name"></div>
+            <div class="ai-desc-label">💬 Panduan dari AI Barber:</div>
             <div class="result-desc" id="result-desc"></div>
           </div>
         </div>
 
-        <!-- Warna Rambut -->
+        <div class="info-note">
+          <span>ℹ️</span>
+          <span>Preview ini menampilkan foto Anda dengan panduan gaya dari AI. Tunjukkan ke barber untuk hasil nyatanya!</span>
+        </div>
+
         <div class="color-section">
           <div class="color-title">Ingin cat rambut? <span class="color-optional">(Opsional)</span></div>
           <div class="color-palette">
-            <div class="swatch active" style="background:#111" onclick="pickColor('Hitam Pekat',this)" title="Hitam Pekat"></div>
-            <div class="swatch" style="background:#3d2b1f" onclick="pickColor('Coklat Gelap',this)" title="Coklat Gelap"></div>
-            <div class="swatch" style="background:#7b4f2e" onclick="pickColor('Coklat',this)" title="Coklat"></div>
-            <div class="swatch" style="background:#c19a6b" onclick="pickColor('Caramel',this)" title="Caramel"></div>
-            <div class="swatch" style="background:#d4a017" onclick="pickColor('Golden Blonde',this)" title="Golden Blonde"></div>
-            <div class="swatch" style="background:#8B0000" onclick="pickColor('Merah',this)" title="Merah"></div>
-            <div class="swatch" style="background:#2c3e8c" onclick="pickColor('Biru Hitam',this)" title="Biru Hitam"></div>
-            <div class="swatch" style="background:#808080" onclick="pickColor('Abu-abu',this)" title="Abu-abu/Silver"></div>
+            <div class="swatch active" style="background:#111"    onclick="pickColor('Hitam Pekat',this)"   title="Hitam Pekat"></div>
+            <div class="swatch"        style="background:#3d2b1f" onclick="pickColor('Coklat Gelap',this)"  title="Coklat Gelap"></div>
+            <div class="swatch"        style="background:#7b4f2e" onclick="pickColor('Coklat',this)"        title="Coklat"></div>
+            <div class="swatch"        style="background:#c19a6b" onclick="pickColor('Caramel',this)"       title="Caramel"></div>
+            <div class="swatch"        style="background:#d4a017" onclick="pickColor('Golden Blonde',this)" title="Golden Blonde"></div>
+            <div class="swatch"        style="background:#8B0000" onclick="pickColor('Merah',this)"         title="Merah"></div>
+            <div class="swatch"        style="background:#2c3e8c" onclick="pickColor('Biru Hitam',this)"    title="Biru Hitam"></div>
+            <div class="swatch"        style="background:#808080" onclick="pickColor('Abu-abu',this)"       title="Abu-abu/Silver"></div>
           </div>
         </div>
       </div>
 
       <div class="nav-row" id="nav-3" style="display:none">
         <button class="btn-secondary" onclick="goTo(2)">← Kembali</button>
-        <button class="btn-primary" onclick="goTo(4)">Kirim ke WhatsApp →</button>
+        <button class="btn-primary"   onclick="goTo(4)">Kirim ke WhatsApp →</button>
       </div>
     </div>
 
