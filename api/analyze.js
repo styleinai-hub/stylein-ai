@@ -15,7 +15,7 @@ export default async function handler(req, res) {
       '"recommended_ids": ["id1","id2","id3","id4","id5"],',
       '"summary": "kalimat singkat rekomendasi untuk wajah ini"',
       '}',
-      'Pilih 5 recommended_ids dari: buzz, crew, caesar, textured, ivy, fade, taper, undercut, mohawk, frenchcrop, pompadour, quiff, slickback, curly, wolfcut, bun',
+      'Pilih 5 recommended_ids dari: modern-medium, shaggy-medium, quiff-taper, textured-quiff, short-quiff, wavy-short, slickback-medium, clean-short, extended-top, trendy-short, timeless-short, buzz-sides, buzz-left, height-top, curly-fade, side-part-fade, waves-fade, swept-back, flamboyant, dapper-retro, clipper-casual, tidy-formal, curly-natural, chestnut-smooth, curly-top, undercut-high, spiky, wispy-medium, sleek-glamorous, top-waves, smooth-simple, wispy-red, light-brown, textured-bangs, wispy-bangs, tidy-height, spiky-bold, bangs-layered, shaggy-bangs, tapered-bangs, jagged-layers',
       'Sesuaikan dengan bentuk wajah dan panjang rambut saat ini.'
     ].join('\n');
 
