@@ -2,7 +2,7 @@
 //   STYLEIN.AI — App Logic
 // ══════════════════════════════════
 
-const GEMINI_API_KEY = "AIzaSyDJfU8EGWh2wHha5iAjytCK1iastu2Vaeo";
+const GEMINI_API_KEY = "AIzaSyDQE7i_2h_IruAOISKjPDq8EC5bNmasFd4";
 
 // ── STATE ─────────────────────────
 const state = {
@@ -160,7 +160,7 @@ buzz, crew, caesar, textured, ivy, fade, taper, undercut, mohawk, frenchcrop, po
 Sesuaikan dengan bentuk wajah dan panjang rambut saat ini. Jangan rekomendasikan model yang butuh rambut jauh lebih panjang dari kondisi foto.`;
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -287,7 +287,7 @@ Jelaskan: mengapa cocok untuk wajah ini + berapa minggu sekali perlu dipotong.
 Jangan pakai bullet points atau formatting, cukup paragraf singkat.`;
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
