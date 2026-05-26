@@ -45,7 +45,7 @@ const CATALOG = [
 //   HELPER — GEMINI API
 // ══════════════════════════════════
 async function callGemini(parts, maxTokens = 500, temp = 0.3) {
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
   for (let attempt = 1; attempt <= 3; attempt++) {
     const response = await fetch(endpoint, {
       method: 'POST',
