@@ -1,156 +1,61 @@
 // ══════════════════════════════════
 //   STYLEIN.AI — App Logic
-//   Analisis : Gemini 1.5 Flash
-//   Hair Swap: LightX API v2
+//   Semua API key ada di server
+//   Tidak ada key di file ini
 // ══════════════════════════════════
 
-const GEMINI_API_KEY = "AIzaSyDQE7i_2h_IruAOISKjPDq8EC5bNmasFd4";
-const LIGHTX_API_KEY = "18fe4a80a534484c9d7abf8196977cfa_bb3824750d0d43aebbbf4307a729c4ba_andoraitools";
-
-// ── STATE ─────────────────────────
 const state = {
-  photo: null,           // base64
-  photoBlob: null,       // File blob asli
+  photo: null,
+  photoBlob: null,
   photoMime: 'image/jpeg',
-  photoSize: 0,          // ukuran bytes
+  photoSize: 0,
   analysis: null,
   selectedModel: null,
   selectedColor: 'Warna asli',
   previewRun: false,
   stepInterval: null,
-  lightxImageUrl: null,  // URL foto setelah diupload ke LightX
+  lightxImageUrl: null,
 };
 
-// ── KATALOG ───────────────────────
 const CATALOG = [
   { id: 'buzz',       name: 'Buzz Cut',      cat: 'pendek', icon: '✂️',  prompt: 'buzz cut, very short hair all around, clean fade' },
   { id: 'crew',       name: 'Crew Cut',       cat: 'pendek', icon: '💈',  prompt: 'crew cut, short sides, slightly longer on top, neat' },
-  { id: 'caesar',     name: 'Caesar Cut',     cat: 'pendek', icon: '👑',  prompt: 'caesar cut, short straight fringe, even length all over' },
-  { id: 'textured',   name: 'Textured Crop',  cat: 'pendek', icon: '🪨',  prompt: 'textured crop, short messy top, fade sides, modern style' },
-  { id: 'ivy',        name: 'Ivy League',     cat: 'pendek', icon: '🍃',  prompt: 'ivy league haircut, side part, short clean preppy style' },
+  { id: 'caesar',     name: 'Caesar Cut',     cat: 'pendek', icon: '👑',  prompt: 'caesar cut, short straight fringe, even length' },
+  { id: 'textured',   name: 'Textured Crop',  cat: 'pendek', icon: '🪨',  prompt: 'textured crop, short messy top, fade sides, modern' },
+  { id: 'ivy',        name: 'Ivy League',     cat: 'pendek', icon: '🍃',  prompt: 'ivy league haircut, side part, short clean preppy' },
   { id: 'fade',       name: 'Skin Fade',      cat: 'fade',   icon: '🔥',  prompt: 'skin fade haircut, bald fade sides, short on top' },
-  { id: 'taper',      name: 'Taper Cut',      cat: 'fade',   icon: '🪒',  prompt: 'taper cut, natural gradient from top to sides, clean finish' },
-  { id: 'undercut',   name: 'Undercut',       cat: 'fade',   icon: '⚡',  prompt: 'undercut hairstyle, shaved sides, longer hair on top slicked' },
-  { id: 'mohawk',     name: 'Faux Mohawk',    cat: 'fade',   icon: '⚔️',  prompt: 'faux mohawk, fade sides, longer center strip styled up' },
-  { id: 'frenchcrop', name: 'French Crop',    cat: 'fade',   icon: '🗼',  prompt: 'french crop haircut, short fringe, skin fade sides, sharp' },
-  { id: 'pompadour',  name: 'Pompadour',      cat: 'sedang', icon: '🎩',  prompt: 'pompadour hairstyle, voluminous swept back top, fade sides' },
+  { id: 'taper',      name: 'Taper Cut',      cat: 'fade',   icon: '🪒',  prompt: 'taper cut, natural gradient, clean finish' },
+  { id: 'undercut',   name: 'Undercut',       cat: 'fade',   icon: '⚡',  prompt: 'undercut hairstyle, shaved sides, longer hair on top' },
+  { id: 'mohawk',     name: 'Faux Mohawk',    cat: 'fade',   icon: '⚔️',  prompt: 'faux mohawk, fade sides, longer center strip' },
+  { id: 'frenchcrop', name: 'French Crop',    cat: 'fade',   icon: '🗼',  prompt: 'french crop, short fringe, skin fade sides' },
+  { id: 'pompadour',  name: 'Pompadour',      cat: 'sedang', icon: '🎩',  prompt: 'pompadour hairstyle, voluminous swept back top' },
   { id: 'quiff',      name: 'Quiff',          cat: 'sedang', icon: '🌊',  prompt: 'quiff hairstyle, styled front volume, neat sides' },
   { id: 'slickback',  name: 'Slick Back',     cat: 'sedang', icon: '💎',  prompt: 'slick back hair, combed back with gel, clean sides' },
   { id: 'curly',      name: 'Curly Natural',  cat: 'sedang', icon: '🌀',  prompt: 'natural curly hair, medium length, defined curls' },
-  { id: 'wolfcut',    name: 'Wolf Cut',       cat: 'panjang', icon: '🐺', prompt: 'wolf cut, layered shaggy hair, curtain bangs, edgy' },
-  { id: 'bun',        name: 'Man Bun',        cat: 'panjang', icon: '🎋', prompt: 'man bun hairstyle, long hair tied up on top' },
+  { id: 'wolfcut',    name: 'Wolf Cut',       cat: 'panjang', icon: '🐺', prompt: 'wolf cut, layered shaggy hair, curtain bangs' },
+  { id: 'bun',        name: 'Man Bun',        cat: 'panjang', icon: '🎋', prompt: 'man bun, long hair tied up on top' },
 ];
 
 // ══════════════════════════════════
-//   HELPER — GEMINI API
-// ══════════════════════════════════
-async function callGemini(parts, maxTokens = 500, temp = 0.3) {
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: { temperature: temp, maxOutputTokens: maxTokens }
-      })
-    });
-    if (response.ok) {
-      const data = await response.json();
-      return data.candidates[0].content.parts[0].text;
-    }
-    if (response.status === 429) {
-      const wait = attempt * 8000;
-      setLoadingMsg(`Server sibuk, mencoba ulang dalam ${wait/1000} detik... (${attempt}/3)`);
-      await sleep(wait);
-      continue;
-    }
-    const errData = await response.json().catch(() => ({}));
-    throw new Error(`Gemini error ${response.status}: ${JSON.stringify(errData)}`);
-  }
-  throw new Error('Gemini tidak merespons. Coba lagi dalam 1-2 menit.');
-}
-
-// ══════════════════════════════════
-//   HELPER — LIGHTX API v2
-// ══════════════════════════════════
-
-// Step 1: Minta upload URL dari LightX
-async function getLightXUploadUrl(sizeInBytes, mimeType) {
-  const response = await fetch('/api/upload-url', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ size: sizeInBytes, contentType: mimeType })
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(`Upload URL error: ${JSON.stringify(err)}`);
-  }
-  const data = await response.json();
-  return {
-    uploadUrl: data.body.uploadImage,
-    imageUrl:  data.body.imageUrl
-  };
-}
-
-// Step 1.1: Upload foto ke S3 via PUT
-async function uploadImageToS3(putUrl, blob, mimeType) {
-  const response = await fetch(putUrl, {
-    method: 'PUT',
-    headers: { 'Content-Type': mimeType },
-    body: blob
-  });
-  if (!response.ok) {
-    throw new Error(`Upload ke S3 gagal: ${response.status}`);
-  }
-  return true;
-}
-
-// Step 2: Generate hairstyle
-async function generateHairstyle(imageUrl, textPrompt) {
-  const response = await fetch('/api/hairstyle', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ imageUrl, textPrompt })
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(`Hairstyle error: ${JSON.stringify(err)}`);
-  }
-  const data = await response.json();
-  return data.body.orderId;
-}
-
-// Step 2.1: Poll status sampai active
-async function pollOrderStatus(orderId) {
-  for (let i = 1; i <= 5; i++) {
-    await sleep(3000);
-    setLoadingMsg(`Memproses gambar... (${i}/5)`);
-
-    const response = await fetch('/api/order-status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId })
-    });
-
-    if (!response.ok) continue;
-
-    const data  = await response.json();
-    const status = data.body?.status;
-
-    if (status === 'active') return data.body.output;
-    if (status === 'failed') throw new Error('Generasi gambar gagal di server LightX.');
-  }
-  throw new Error('Timeout: gambar tidak selesai dalam 15 detik.');
-}
-
-// ══════════════════════════════════
-//   HELPER UMUM
+//   HELPER
 // ══════════════════════════════════
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function setLoadingMsg(msg) {
   document.querySelectorAll('.loading-sub').forEach(el => { el.textContent = msg; });
+}
+
+async function callAPI(endpoint, body) {
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(`Error ${response.status}: ${JSON.stringify(err)}`);
+  }
+  return response.json();
 }
 
 // ══════════════════════════════════
@@ -179,13 +84,8 @@ const fileInput  = document.getElementById('file-input');
 const previewImg = document.getElementById('preview-img');
 
 uploadArea.addEventListener('click', () => fileInput.click());
-uploadArea.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  uploadArea.style.borderColor = 'var(--gold)';
-});
-uploadArea.addEventListener('dragleave', () => {
-  uploadArea.style.borderColor = '';
-});
+uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.style.borderColor = 'var(--gold)'; });
+uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = ''; });
 uploadArea.addEventListener('drop', (e) => {
   e.preventDefault();
   const file = e.dataTransfer.files[0];
@@ -196,15 +96,13 @@ fileInput.addEventListener('change', (e) => {
 });
 
 function handleFile(file) {
-  // Validasi ukuran maks 5MB
   if (file.size > 5 * 1024 * 1024) {
-    alert('Ukuran foto maksimal 5MB. Silakan pilih foto lain.');
+    alert('Ukuran foto maksimal 5MB.');
     return;
   }
-  // Validasi ukuran minimal (LightX butuh min 512x512)
-  state.photoMime  = file.type || 'image/jpeg';
-  state.photoSize  = file.size;
-  state.photoBlob  = file; // simpan blob untuk upload ke LightX
+  state.photoMime = file.type || 'image/jpeg';
+  state.photoSize = file.size;
+  state.photoBlob = file;
 
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -219,7 +117,7 @@ function handleFile(file) {
 }
 
 // ══════════════════════════════════
-//   SCREEN 2 — ANALISIS GEMINI
+//   SCREEN 2 — ANALISIS
 // ══════════════════════════════════
 let analysisRun = false;
 
@@ -234,7 +132,11 @@ async function startAnalysis() {
   document.getElementById('nav-2').style.display            = 'none';
 
   try {
-    const result = await analyzePhoto();
+    // Panggil server kita — bukan Gemini langsung
+    const result = await callAPI('/api/analyze', {
+      photo: state.photo,
+      mimeType: state.photoMime
+    });
     state.analysis = result;
     renderAnalysis(result);
   } catch (err) {
@@ -251,37 +153,13 @@ async function startAnalysis() {
   }
 }
 
-async function analyzePhoto() {
-  const prompt = `Kamu adalah AI analis rambut profesional untuk barbershop Indonesia.
-Analisis foto wajah ini dengan teliti, lalu balas HANYA dengan JSON berikut tanpa markdown, tanpa penjelasan tambahan apapun:
-{
-  "face_shape": "oval|bulat|persegi|lonjong|hati",
-  "hair_type": "lurus|bergelombang|keriting",
-  "hair_length": "sangat pendek|pendek|sedang|panjang",
-  "recommended_ids": ["id1","id2","id3","id4","id5"],
-  "summary": "Kalimat singkat 1 baris rekomendasi untuk wajah ini"
-}
-Pilih 5 recommended_ids dari daftar ini saja:
-buzz, crew, caesar, textured, ivy, fade, taper, undercut, mohawk, frenchcrop, pompadour, quiff, slickback, curly, wolfcut, bun
-Sesuaikan dengan bentuk wajah dan panjang rambut saat ini.`;
-
-  const raw = await callGemini([
-    { inline_data: { mime_type: state.photoMime, data: state.photo } },
-    { text: prompt }
-  ], 500, 0.3);
-
-  return JSON.parse(raw.replace(/```json|```/g, '').trim());
-}
-
 function renderAnalysis(data) {
   if (!data) return;
   document.getElementById('analysis-box').style.display  = 'block';
   document.getElementById('a-face').textContent          = data.face_shape?.toUpperCase() || '—';
   document.getElementById('a-type').textContent          = data.hair_type   || '—';
   document.getElementById('a-length').textContent        = data.hair_length  || '—';
-  if (data.summary) {
-    document.getElementById('analysis-summary').textContent = data.summary;
-  }
+  if (data.summary) document.getElementById('analysis-summary').textContent = data.summary;
 }
 
 function renderModelGrid(filter) {
@@ -321,8 +199,8 @@ function selectModel(model, cardEl) {
   document.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
   cardEl.classList.add('selected');
   document.getElementById('btn-to-3').disabled = false;
-  state.previewRun = false;
-  state.lightxImageUrl = null; // reset supaya upload ulang kalau ganti model
+  state.previewRun     = false;
+  state.lightxImageUrl = null;
 }
 
 function filterModels(cat, btn) {
@@ -332,7 +210,7 @@ function filterModels(cat, btn) {
 }
 
 // ══════════════════════════════════
-//   SCREEN 3 — PREVIEW LIGHTX
+//   SCREEN 3 — PREVIEW
 // ══════════════════════════════════
 async function startPreview() {
   if (state.previewRun) return;
@@ -347,38 +225,53 @@ async function startPreview() {
   animateSteps();
 
   try {
-    // Step 1: Upload foto ke LightX (hanya jika belum)
+    // Step 1: Upload foto ke LightX (via server kita)
     if (!state.lightxImageUrl) {
       setLoadingMsg('Mengupload foto ke server AI...');
-      document.getElementById('pstep-1').querySelector('span:last-child').textContent =
-        'Mengupload foto ke server AI...';
+      const uploadData = await callAPI('/api/upload-url', {
+        size: state.photoSize,
+        contentType: state.photoMime
+      });
 
-      const { uploadUrl, imageUrl } = await getLightXUploadUrl(
-        state.photoSize,
-        state.photoMime
-      );
-      await uploadImageToS3(uploadUrl, state.photoBlob, state.photoMime);
+      const { uploadImage, imageUrl } = uploadData.body;
+
+      // PUT langsung ke S3 — ini boleh dari browser
+      const putResponse = await fetch(uploadImage, {
+        method: 'PUT',
+        headers: { 'Content-Type': state.photoMime },
+        body: state.photoBlob
+      });
+
+      if (!putResponse.ok) throw new Error('Upload foto gagal.');
       state.lightxImageUrl = imageUrl;
     }
 
-    // Step 2: Generate hairstyle
-    setLoadingMsg('AI menerapkan model rambut ke foto Anda...');
+    // Step 2: Generate hairstyle (via server kita)
+    setLoadingMsg('AI menerapkan model rambut...');
     const model      = state.selectedModel;
     const colorHint  = state.selectedColor !== 'Warna asli'
       ? `, ${state.selectedColor} hair color` : '';
     const prompt     = model.prompt + colorHint;
 
-    const orderId = await generateHairstyle(state.lightxImageUrl, prompt);
+    const hairstyleData = await callAPI('/api/hairstyle', {
+      imageUrl: state.lightxImageUrl,
+      textPrompt: prompt
+    });
 
-    // Step 3: Poll sampai selesai
-    setLoadingMsg('Memproses gambar... (1/5)');
+    const orderId = hairstyleData.body?.orderId;
+    if (!orderId) throw new Error('Tidak mendapat order ID dari LightX.');
+
+    // Step 3: Poll status
     const outputUrl = await pollOrderStatus(orderId);
 
-    // Step 4: Ambil deskripsi dari Gemini
+    // Step 4: Deskripsi dari Gemini (via server kita)
     setLoadingMsg('Menyiapkan panduan barber...');
-    const desc = await generateModelDescription();
+    const descData = await callAPI('/api/describe', {
+      modelName: model.name,
+      faceShape: state.analysis?.face_shape || 'oval'
+    });
 
-    renderPreview(outputUrl, desc);
+    renderPreview(outputUrl, descData.description);
     document.getElementById('preview-status').textContent =
       'Selesai! Lihat hasil simulasi rambut Anda.';
 
@@ -388,11 +281,23 @@ async function startPreview() {
   }
 }
 
+async function pollOrderStatus(orderId) {
+  for (let i = 1; i <= 5; i++) {
+    await sleep(3000);
+    setLoadingMsg(`Memproses gambar... (${i}/5)`);
+
+    const data = await callAPI('/api/order-status', { orderId });
+    const status = data.body?.status;
+
+    if (status === 'active') return data.body.output;
+    if (status === 'failed') throw new Error('Generasi gambar gagal.');
+  }
+  throw new Error('Timeout: coba lagi dalam beberapa saat.');
+}
+
 function animateSteps() {
   const steps = ['pstep-1', 'pstep-2', 'pstep-3'];
-  steps.forEach(id => {
-    document.getElementById(id).classList.remove('active', 'done');
-  });
+  steps.forEach(id => document.getElementById(id).classList.remove('active', 'done'));
   document.getElementById('pstep-1').classList.add('active');
   let current = 0;
   state.stepInterval = setInterval(() => {
@@ -404,7 +309,7 @@ function animateSteps() {
     } else {
       clearInterval(state.stepInterval);
     }
-  }, 5000); // 5 detik per step — sesuai proses LightX ~15 detik
+  }, 5000);
 }
 
 function showPreviewError(msg) {
@@ -422,46 +327,29 @@ function retryPreview() {
   startPreview();
 }
 
-async function generateModelDescription() {
-  const model = state.selectedModel;
-  const face  = state.analysis?.face_shape || 'oval';
-  try {
-    return await callGemini([{
-      text: `Kamu adalah barber profesional Indonesia. Tulis panduan singkat untuk model rambut "${model.name}" bagi pelanggan dengan wajah ${face}. Maksimal 2 kalimat natural dan friendly dalam Bahasa Indonesia. Jelaskan mengapa cocok dan berapa minggu sekali perlu dipotong. Tanpa bullet points.`
-    }], 200, 0.7);
-  } catch {
-    return `${model.name} sangat cocok untuk wajah ${face}. Disarankan potong setiap 3–4 minggu agar selalu rapi.`;
-  }
-}
-
 function renderPreview(outputImageUrl, desc) {
   clearInterval(state.stepInterval);
   const model = state.selectedModel;
 
-  // Isi konten teks dulu (tanpa tampilkan)
   document.getElementById('res-icon').textContent          = model.icon;
   document.getElementById('res-name').textContent          = model.name;
   document.getElementById('overlay-model').textContent     = model.name;
   document.getElementById('result-model-name').textContent = model.name;
-  document.getElementById('result-desc').textContent       = desc;
+  document.getElementById('result-desc').textContent       = desc || `${model.name} cocok untuk tampilan modern. Potong setiap 3-4 minggu.`;
   document.querySelector('.result-badge').textContent      = 'AI GENERATED';
 
-  // Sembunyikan loading, tampilkan result wrapper dulu
   document.getElementById('loading-preview').style.display = 'none';
   document.getElementById('preview-error').style.display   = 'none';
   document.getElementById('preview-result').style.display  = 'block';
   document.getElementById('nav-3').style.display           = 'flex';
 
-  // Tampilkan skeleton loader di area foto
+  // Loading skeleton sampai foto selesai load
   const imgWrap = document.querySelector('.result-img-wrap');
   imgWrap.classList.add('img-loading');
-
-  // Buat elemen image baru — load di background
   const img = document.getElementById('result-img');
   img.style.opacity = '0';
   img.src = '';
 
-  // Baru tampilkan foto saat benar-benar sudah loaded
   const tempImg = new Image();
   tempImg.onload = () => {
     img.src = outputImageUrl;
@@ -473,10 +361,8 @@ function renderPreview(outputImageUrl, desc) {
     imgWrap.classList.remove('img-loading');
     img.style.opacity = '1';
     img.src = 'data:' + state.photoMime + ';base64,' + state.photo;
-    document.getElementById('result-desc').textContent =
-      desc + '\n\n⚠️ Preview AI tidak tersedia, menampilkan foto asli.';
   };
-  tempImg.src = outputImageUrl; // mulai load di background
+  tempImg.src = outputImageUrl;
 }
 
 // ── WARNA ─────────────────────────
@@ -485,7 +371,6 @@ function pickColor(colorName, el) {
   document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('sum-color').textContent = colorName;
-  // Reset preview agar generate ulang dengan warna baru
   state.previewRun = false;
 }
 
@@ -500,8 +385,8 @@ function updateSummary() {
 function sendWhatsApp() {
   const name = document.getElementById('inp-name').value.trim();
   const wa   = document.getElementById('inp-wa').value.trim();
-  if (!name) { alert('Mohon isi nama Anda terlebih dahulu.'); return; }
-  if (!wa)   { alert('Mohon isi nomor WhatsApp Anda.'); return; }
+  if (!name) { alert('Mohon isi nama Anda.'); return; }
+  if (!wa)   { alert('Mohon isi nomor WhatsApp.'); return; }
 
   const msg =
 `✂️ *StyleIn.AI — Hasil Simulasi Rambut*
@@ -509,13 +394,13 @@ function sendWhatsApp() {
 Halo *${name}*! Berikut hasil sesi StyleIn.AI Anda:
 
 📊 *Analisis Wajah:*
-- Bentuk wajah : ${state.analysis?.face_shape  || '-'}
-- Jenis rambut : ${state.analysis?.hair_type   || '-'}
+- Bentuk wajah    : ${state.analysis?.face_shape  || '-'}
+- Jenis rambut    : ${state.analysis?.hair_type   || '-'}
 - Panjang saat ini: ${state.analysis?.hair_length || '-'}
 
 💈 *Pilihan Gaya:*
-- Model rambut : *${state.selectedModel?.name || '-'}*
-- Warna cat    : ${state.selectedColor}
+- Model rambut: *${state.selectedModel?.name || '-'}*
+- Warna cat   : ${state.selectedColor}
 
 📸 Foto simulasi sudah digenerate oleh AI.
 Tunjukkan ke barber untuk hasil nyatanya! 💪
@@ -533,18 +418,13 @@ _Powered by StyleIn.AI — Smart Barbershop Platform_`;
 // ══════════════════════════════════
 function resetApp() {
   clearInterval(state.stepInterval);
-  state.photo          = null;
-  state.photoBlob      = null;
-  state.photoSize      = 0;
-  state.analysis       = null;
-  state.selectedModel  = null;
-  state.selectedColor  = 'Warna asli';
-  state.previewRun     = false;
-  state.lightxImageUrl = null;
-  analysisRun          = false;
+  state.photo = null; state.photoBlob = null;
+  state.photoSize = 0; state.analysis = null;
+  state.selectedModel = null; state.selectedColor = 'Warna asli';
+  state.previewRun = false; state.lightxImageUrl = null;
+  analysisRun = false;
 
-  previewImg.src    = '';
-  previewImg.hidden = true;
+  previewImg.src = ''; previewImg.hidden = true;
   document.getElementById('upload-inner').style.display = '';
   uploadArea.classList.remove('filled');
   document.getElementById('btn-to-2').disabled = true;
