@@ -18,22 +18,215 @@ const state = {
 };
 
 const CATALOG = [
-  { id: 'buzz',       name: 'Buzz Cut',      cat: 'pendek', icon: '✂️',  prompt: 'buzz cut, very short hair all around, clean fade' },
-  { id: 'crew',       name: 'Crew Cut',       cat: 'pendek', icon: '💈',  prompt: 'crew cut, short sides, slightly longer on top, neat' },
-  { id: 'caesar',     name: 'Caesar Cut',     cat: 'pendek', icon: '👑',  prompt: 'caesar cut, short straight fringe, even length' },
-  { id: 'textured',   name: 'Textured Crop',  cat: 'pendek', icon: '🪨',  prompt: 'textured crop, short messy top, fade sides, modern' },
-  { id: 'ivy',        name: 'Ivy League',     cat: 'pendek', icon: '🍃',  prompt: 'ivy league haircut, side part, short clean preppy' },
-  { id: 'fade',       name: 'Skin Fade',      cat: 'fade',   icon: '🔥',  prompt: 'skin fade haircut, bald fade sides, short on top' },
-  { id: 'taper',      name: 'Taper Cut',      cat: 'fade',   icon: '🪒',  prompt: 'taper cut, natural gradient, clean finish' },
-  { id: 'undercut',   name: 'Undercut',       cat: 'fade',   icon: '⚡',  prompt: 'undercut hairstyle, shaved sides, longer hair on top' },
-  { id: 'mohawk',     name: 'Faux Mohawk',    cat: 'fade',   icon: '⚔️',  prompt: 'faux mohawk, fade sides, longer center strip' },
-  { id: 'frenchcrop', name: 'French Crop',    cat: 'fade',   icon: '🗼',  prompt: 'french crop, short fringe, skin fade sides' },
-  { id: 'pompadour',  name: 'Pompadour',      cat: 'sedang', icon: '🎩',  prompt: 'pompadour hairstyle, voluminous swept back top' },
-  { id: 'quiff',      name: 'Quiff',          cat: 'sedang', icon: '🌊',  prompt: 'quiff hairstyle, styled front volume, neat sides' },
-  { id: 'slickback',  name: 'Slick Back',     cat: 'sedang', icon: '💎',  prompt: 'slick back hair, combed back with gel, clean sides' },
-  { id: 'curly',      name: 'Curly Natural',  cat: 'sedang', icon: '🌀',  prompt: 'natural curly hair, medium length, defined curls' },
-  { id: 'wolfcut',    name: 'Wolf Cut',       cat: 'panjang', icon: '🐺', prompt: 'wolf cut, layered shaggy hair, curtain bangs' },
-  { id: 'bun',        name: 'Man Bun',        cat: 'panjang', icon: '🎋', prompt: 'man bun, long hair tied up on top' },
+  // ── PENDEK ─────────────────────
+  {
+    id: 'modern-medium', name: 'Modern Medium Natural', cat: 'sedang', icon: '🌿',
+    prompt: 'medium length hair with natural volume, side swept fringe, layered',
+    img: 'https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg?w=400'
+  },
+  {
+    id: 'shaggy-medium', name: 'Shaggy Medium', cat: 'sedang', icon: '🌊',
+    prompt: 'medium length shaggy hairstyle, natural waves, jaw length',
+    img: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?w=400'
+  },
+  {
+    id: 'quiff-taper', name: 'Quiff Tapered', cat: 'pendek', icon: '⬆️',
+    prompt: 'short quiff with tapered sides, height on top, textured',
+    img: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?w=400'
+  },
+  {
+    id: 'textured-quiff', name: 'Textured Quiff', cat: 'pendek', icon: '🪨',
+    prompt: 'textured quiff with taper fade, modern versatile style',
+    img: 'https://images.pexels.com/photos/842980/pexels-photo-842980.jpeg?w=400'
+  },
+  {
+    id: 'short-quiff', name: 'Short Quiff', cat: 'pendek', icon: '✨',
+    prompt: 'short quiff hairstyle, shorter sides, styled top',
+    img: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?w=400'
+  },
+  {
+    id: 'wavy-short', name: 'Short Natural Waves', cat: 'pendek', icon: '〰️',
+    prompt: 'short hairstyle with natural waves, formal and informal',
+    img: 'https://images.pexels.com/photos/1559486/pexels-photo-1559486.jpeg?w=400'
+  },
+  {
+    id: 'slickback-medium', name: 'Slick Back Medium', cat: 'sedang', icon: '💎',
+    prompt: 'medium length slicked back hair, swept back textured top, tapered sides',
+    img: 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?w=400'
+  },
+  {
+    id: 'clean-short', name: 'Clean Short Classic', cat: 'pendek', icon: '🎯',
+    prompt: 'clean timeless short hairstyle, bold side parting, structured finish',
+    img: 'https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?w=400'
+  },
+  {
+    id: 'extended-top', name: 'Extended Length Top', cat: 'pendek', icon: '📐',
+    prompt: 'short trendy hairstyle, tapered sides, extended length on top',
+    img: 'https://images.pexels.com/photos/3768166/pexels-photo-3768166.jpeg?w=400'
+  },
+  {
+    id: 'trendy-short', name: 'Trendy Short', cat: 'pendek', icon: '⚡',
+    prompt: 'trendy short hairstyle, very short sides, longer top, low maintenance',
+    img: 'https://images.pexels.com/photos/1300402/pexels-photo-1300402.jpeg?w=400'
+  },
+  // ── FADE ───────────────────────
+  {
+    id: 'timeless-short', name: 'Timeless Short', cat: 'pendek', icon: '🕐',
+    prompt: 'timeless short hairstyle, short sides, slightly longer top',
+    img: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?w=400'
+  },
+  {
+    id: 'buzz-sides', name: 'Buzz Sides Long Top', cat: 'fade', icon: '✂️',
+    prompt: 'buzz cut sides, longer middle top, clean structured look',
+    img: 'https://images.pexels.com/photos/1212984/pexels-photo-1212984.jpeg?w=400'
+  },
+  {
+    id: 'buzz-left', name: 'Buzz Styled Left', cat: 'fade', icon: '👈',
+    prompt: 'buzz cut sides, longer top styled to the left, sharp structure',
+    img: 'https://images.pexels.com/photos/1040173/pexels-photo-1040173.jpeg?w=400'
+  },
+  {
+    id: 'height-top', name: 'Height Top Fade', cat: 'fade', icon: '🏔️',
+    prompt: 'short hair with height on top, shorter sides, elongating face',
+    img: 'https://images.pexels.com/photos/1183266/pexels-photo-1183266.jpeg?w=400'
+  },
+  {
+    id: 'curly-fade', name: 'Curly Fade', cat: 'fade', icon: '🌀',
+    prompt: 'natural curls on top, short sides fade, defined curls',
+    img: 'https://images.pexels.com/photos/1680175/pexels-photo-1680175.jpeg?w=400'
+  },
+  {
+    id: 'side-part-fade', name: 'Side Part Fade', cat: 'fade', icon: '📏',
+    prompt: 'short trendy hairstyle, side part, short sides longer top fade',
+    img: 'https://images.pexels.com/photos/2269872/pexels-photo-2269872.jpeg?w=400'
+  },
+  {
+    id: 'waves-fade', name: 'Waves Fade', cat: 'fade', icon: '🌊',
+    prompt: 'short sleek hairstyle with waves, height on top, fade sides',
+    img: 'https://images.pexels.com/photos/1484801/pexels-photo-1484801.jpeg?w=400'
+  },
+  {
+    id: 'swept-back', name: 'Swept Back Fade', cat: 'fade', icon: '💨',
+    prompt: 'short straight hair swept back, voluminous, fade sides',
+    img: 'https://images.pexels.com/photos/1681007/pexels-photo-1681007.jpeg?w=400'
+  },
+  {
+    id: 'flamboyant', name: 'Flamboyant Voluminous', cat: 'fade', icon: '🔥',
+    prompt: 'voluminous swept back top, high fade sides, bold statement look',
+    img: 'https://images.pexels.com/photos/2232981/pexels-photo-2232981.jpeg?w=400'
+  },
+  {
+    id: 'dapper-retro', name: 'Dapper Retro', cat: 'sedang', icon: '🎩',
+    prompt: 'dapper hairstyle, coiff swept back, short sides, retro professional',
+    img: 'https://images.pexels.com/photos/1722198/pexels-photo-1722198.jpeg?w=400'
+  },
+  // ── CASUAL ─────────────────────
+  {
+    id: 'clipper-casual', name: 'Casual Clipper Cut', cat: 'pendek', icon: '✂️',
+    prompt: 'casual clipper cut, short sides, textured jagged top',
+    img: 'https://images.pexels.com/photos/775358/pexels-photo-775358.jpeg?w=400'
+  },
+  {
+    id: 'tidy-formal', name: 'Tidy Formal Short', cat: 'pendek', icon: '👔',
+    prompt: 'formal short tidy hairstyle, close sides, height on top',
+    img: 'https://images.pexels.com/photos/1036623/pexels-photo-1036623.jpeg?w=400'
+  },
+  {
+    id: 'curly-natural', name: 'Natural Curls Short', cat: 'pendek', icon: '🌸',
+    prompt: 'naturally curly hair cropped short, movement on top, neat edges',
+    img: 'https://images.pexels.com/photos/1468379/pexels-photo-1468379.jpeg?w=400'
+  },
+  {
+    id: 'chestnut-smooth', name: 'Smooth Chestnut', cat: 'pendek', icon: '🍂',
+    prompt: 'short smooth chestnut brown hair, clipper cut sides, versatile top',
+    img: 'https://images.pexels.com/photos/1656684/pexels-photo-1656684.jpeg?w=400'
+  },
+  {
+    id: 'curly-top', name: 'Curly Top Short Sides', cat: 'sedang', icon: '🎪',
+    prompt: 'casual short back sides with curly top, natural movement',
+    img: 'https://images.pexels.com/photos/1462637/pexels-photo-1462637.jpeg?w=400'
+  },
+  {
+    id: 'undercut-high', name: 'Undercut High Top', cat: 'fade', icon: '⚔️',
+    prompt: 'undercut high top hairstyle, clipper cut high sides, swept back',
+    img: 'https://images.pexels.com/photos/2896853/pexels-photo-2896853.jpeg?w=400'
+  },
+  {
+    id: 'spiky', name: 'Spiky Casual', cat: 'pendek', icon: '⚡',
+    prompt: 'short spiky casual hairstyle, textured jagged layers, wax styled',
+    img: 'https://images.pexels.com/photos/1484794/pexels-photo-1484794.jpeg?w=400'
+  },
+  {
+    id: 'wispy-medium', name: 'Wispy Medium', cat: 'sedang', icon: '🍃',
+    prompt: 'smooth wispy medium length hair, razor cut layers, side bangs',
+    img: 'https://images.pexels.com/photos/1040881/pexels-photo-1040881.jpeg?w=400'
+  },
+  {
+    id: 'sleek-glamorous', name: 'Sleek Glamorous', cat: 'sedang', icon: '💫',
+    prompt: 'sleek glamorous mens hairstyle, slicked sides, teased high top',
+    img: 'https://images.pexels.com/photos/1300402/pexels-photo-1300402.jpeg?w=400'
+  },
+  {
+    id: 'top-waves', name: 'Top Waves Short', cat: 'pendek', icon: '〰️',
+    prompt: 'short male hairstyle with waves on top, styled curls, formal',
+    img: 'https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg?w=400'
+  },
+  {
+    id: 'smooth-simple', name: 'Smooth Simple', cat: 'pendek', icon: '🎯',
+    prompt: 'smooth simple short hairstyle, flat or messy versatile look',
+    img: 'https://images.pexels.com/photos/842980/pexels-photo-842980.jpeg?w=400'
+  },
+  {
+    id: 'wispy-red', name: 'Wispy Textured', cat: 'pendek', icon: '🍁',
+    prompt: 'short wispy textured hairstyle, jagged edges, natural fall',
+    img: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?w=400'
+  },
+  {
+    id: 'light-brown', name: 'Classic Clean Cut', cat: 'pendek', icon: '🪮',
+    prompt: 'short classic clean cut, swept over top, tidy all occasions',
+    img: 'https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?w=400'
+  },
+  {
+    id: 'textured-bangs', name: 'Textured Bangs', cat: 'pendek', icon: '🎭',
+    prompt: 'short funky hairstyle with textured bangs, clipper cut sides',
+    img: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?w=400'
+  },
+  {
+    id: 'wispy-bangs', name: 'Wispy Bangs', cat: 'pendek', icon: '🌬️',
+    prompt: 'short wispy hairstyle with bangs, tapered back, pieced out fringe',
+    img: 'https://images.pexels.com/photos/1559486/pexels-photo-1559486.jpeg?w=400'
+  },
+  // ── SEDANG/PANJANG ─────────────
+  {
+    id: 'tidy-height', name: 'Tidy Height Wavy', cat: 'sedang', icon: '📊',
+    prompt: 'tidy brown wavy hairstyle with height, jagged cut top, round face',
+    img: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?w=400'
+  },
+  {
+    id: 'spiky-bold', name: 'Spiky Bold', cat: 'pendek', icon: '🗡️',
+    prompt: 'audacious spiky hairstyle, razor cut layers, crown texture height',
+    img: 'https://images.pexels.com/photos/1300402/pexels-photo-1300402.jpeg?w=400'
+  },
+  {
+    id: 'bangs-layered', name: 'Layered Bangs', cat: 'pendek', icon: '📎',
+    prompt: 'short layered hairstyle with bangs, movement texture, long face',
+    img: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?w=400'
+  },
+  {
+    id: 'shaggy-bangs', name: 'Shaggy with Bangs', cat: 'sedang', icon: '🧸',
+    prompt: 'short shaggy hairstyle with bangs, jagged cut, narrow face',
+    img: 'https://images.pexels.com/photos/1183266/pexels-photo-1183266.jpeg?w=400'
+  },
+  {
+    id: 'tapered-bangs', name: 'Tapered Long Bangs', cat: 'sedang', icon: '🎪',
+    prompt: 'tapered hairstyle with long bangs, jagged texture, alternative',
+    img: 'https://images.pexels.com/photos/1484801/pexels-photo-1484801.jpeg?w=400'
+  },
+  {
+    id: 'jagged-layers', name: 'Jagged Top Layers', cat: 'pendek', icon: '⚙️',
+    prompt: 'clipper cut short sides, jagged top layers, styled high texture',
+    img: 'https://images.pexels.com/photos/1212984/pexels-photo-1212984.jpeg?w=400'
+  },
 ];
 
 // ══════════════════════════════════
